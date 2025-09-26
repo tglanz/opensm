@@ -1,6 +1,7 @@
 *.la
 *.lo
 *.o
+.dirstamp
 .deps
 .libs
 aclocal.m4
@@ -42,3 +43,4 @@ osmtest/osmtest
 scripts/opensm.init
 scripts/redhat-opensm.init
 scripts/sldd.sh
+tmp/

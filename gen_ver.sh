@@ -27,9 +27,11 @@ if [ $? -eq 1 ] ; then
 	fi
 fi
 
-git diff-index --quiet HEAD -- ./> /dev/null 2>&1
-if [ $? -eq 1 ] ; then
-	version="${version}_dirty"
+if [ "$OPENSM_IGNORE_DIRTY" != "true" ] ; then
+	git diff-index --quiet HEAD -- ./> /dev/null 2>&1
+	if [ $? -eq 1 ] ; then
+		version="${version}_dirty"
+	fi
 fi
 
 echo $version
