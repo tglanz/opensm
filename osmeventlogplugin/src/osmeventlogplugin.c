@@ -6,12 +6,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <string.h>
 #include <opensm/osm_version.h>
 #include <opensm/osm_opensm.h>
 #include <opensm/osm_log.h>
 #include <opensm/osm_event_plugin.h>
 
-#define EVENTLOG_PLUGIN_OUTPUT_FILE "/tmp/osm_events.json"
+#define EVENTLOG_PLUGIN_DEFAULT_OUTPUT_FILE "/var/log/opensm-events.log"
 
 typedef struct _json_event_logger {
 	FILE *log_file;
@@ -64,15 +65,26 @@ static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id)
 
 static void *construct(osm_opensm_t *osm)
 {
+	const char *output_file = EVENTLOG_PLUGIN_DEFAULT_OUTPUT_FILE;
 	_json_event_logger_t *logger = malloc(sizeof(*logger));
 	if (!logger)
 		return NULL;
 
-	logger->log_file = fopen(EVENTLOG_PLUGIN_OUTPUT_FILE, "a");
+	if (osm->subn.opt.event_plugin_options && *osm->subn.opt.event_plugin_options) {
+		output_file = osm->subn.opt.event_plugin_options;
+	}
+
+	logger->log_file = fopen(output_file, "a");
 	if (!logger->log_file) {
+		OSM_LOG(&osm->log, OSM_LOG_ERROR,
+			"Event Log Plugin: Failed to open output file \"%s\"\n",
+			output_file);
 		free(logger);
 		return NULL;
 	}
+
+	OSM_LOG(&osm->log, OSM_LOG_INFO,
+		"Event Log Plugin: Logging events to \"%s\"\n", output_file);
 
 	return logger;
 }
