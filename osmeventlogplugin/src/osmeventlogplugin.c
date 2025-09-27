@@ -7,10 +7,13 @@
 #include <time.h>
 #include <sys/time.h>
 #include <string.h>
+#include <inttypes.h>
 #include <opensm/osm_version.h>
 #include <opensm/osm_opensm.h>
 #include <opensm/osm_log.h>
 #include <opensm/osm_event_plugin.h>
+#include <opensm/osm_helper.h>
+#include <iba/ib_types.h>
 
 #define EVENTLOG_PLUGIN_DEFAULT_OUTPUT_FILE "/var/log/opensm-events.log"
 
@@ -48,7 +51,44 @@ static const char *event_id_to_string(osm_epi_event_id_t event_id)
 	}
 }
 
-static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id)
+static void log_port_errors_payload(FILE *log_file, const osm_epi_pe_event_t *pe_event)
+{
+	fprintf(log_file, ",\"payload\":{");
+	fprintf(log_file, "\"port_id\":{");
+	fprintf(log_file, "\"node_guid\":\"0x%016" PRIx64 "\",", cl_ntoh64(pe_event->port_id.node_guid));
+	fprintf(log_file, "\"port_num\":%u,", pe_event->port_id.port_num);
+	fprintf(log_file, "\"node_name\":\"%s\"", pe_event->port_id.node_name);
+	fprintf(log_file, "},");
+	fprintf(log_file, "\"symbol_err_cnt\":%" PRIu64 ",", pe_event->symbol_err_cnt);
+	fprintf(log_file, "\"link_err_recover\":%" PRIu64 ",", pe_event->link_err_recover);
+	fprintf(log_file, "\"link_downed\":%" PRIu64 ",", pe_event->link_downed);
+	fprintf(log_file, "\"rcv_err\":%" PRIu64 ",", pe_event->rcv_err);
+	fprintf(log_file, "\"rcv_rem_phys_err\":%" PRIu64 ",", pe_event->rcv_rem_phys_err);
+	fprintf(log_file, "\"rcv_switch_relay_err\":%" PRIu64 ",", pe_event->rcv_switch_relay_err);
+	fprintf(log_file, "\"xmit_discards\":%" PRIu64 ",", pe_event->xmit_discards);
+	fprintf(log_file, "\"xmit_constraint_err\":%" PRIu64 ",", pe_event->xmit_constraint_err);
+	fprintf(log_file, "\"rcv_constraint_err\":%" PRIu64 ",", pe_event->rcv_constraint_err);
+	fprintf(log_file, "\"link_integrity\":%" PRIu64 ",", pe_event->link_integrity);
+	fprintf(log_file, "\"buffer_overrun\":%" PRIu64 ",", pe_event->buffer_overrun);
+	fprintf(log_file, "\"vl15_dropped\":%" PRIu64 ",", pe_event->vl15_dropped);
+	fprintf(log_file, "\"xmit_wait\":%" PRIu64, pe_event->xmit_wait);
+	fprintf(log_file, "}");
+}
+
+static void log_trap_payload(FILE *log_file, const ib_mad_notice_attr_t *notice)
+{
+	fprintf(log_file, ",\"payload\":{");
+	fprintf(log_file, "\"type\":\"%s\",", ib_notice_is_generic(notice) ? "generic" : "vendor");
+
+	if (ib_notice_is_generic(notice)) {
+		fprintf(log_file, "\"trap_name\":\"%s\",", ib_get_trap_str(notice->g_or_v.generic.trap_num));
+	}
+
+	fprintf(log_file, "\"issuer_lid\":%u", cl_ntoh16(notice->issuer_lid));
+	fprintf(log_file, "}");
+}
+
+static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id, void *event_data)
 {
 	struct timeval tv;
 	struct tm *tm_info;
@@ -58,8 +98,21 @@ static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id)
 	tm_info = gmtime(&tv.tv_sec);
 	strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
 
-	fprintf(logger->log_file, "{\"timestamp\":\"%s.%06ldZ\",\"event\":\"%s\"}\n",
+	fprintf(logger->log_file, "{\"timestamp\":\"%s.%06ldZ\",\"event\":\"%s\"",
 		time_buffer, tv.tv_usec, event_id_to_string(event_id));
+
+	switch (event_id) {
+	case OSM_EVENT_ID_PORT_ERRORS:
+		log_port_errors_payload(logger->log_file, (const osm_epi_pe_event_t *)event_data);
+		break;
+	case OSM_EVENT_ID_TRAP:
+		log_trap_payload(logger->log_file, (const ib_mad_notice_attr_t *)event_data);
+		break;
+	default:
+		break;
+	}
+
+	fprintf(logger->log_file, "}\n");
 	fflush(logger->log_file);
 }
 
@@ -102,7 +155,7 @@ static void destroy(void *_logger)
 static void report(void *_logger, osm_epi_event_id_t event_id, void *event_data)
 {
 	_json_event_logger_t *logger = (_json_event_logger_t *)_logger;
-	log_event(logger, event_id);
+	log_event(logger, event_id, event_data);
 }
 
 #if OSM_EVENT_PLUGIN_INTERFACE_VER != 2
