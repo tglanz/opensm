@@ -15,7 +15,7 @@
 #include <opensm/osm_helper.h>
 #include <iba/ib_types.h>
 
-#define EVENTLOG_PLUGIN_DEFAULT_OUTPUT_FILE "/var/log/opensm-events.log"
+#define EVENT_EXPORT_PLUGIN_DEFAULT_OUTPUT_FILE "/var/log/opensm-events.log"
 
 typedef struct _json_event_logger {
 	FILE *log_file;
@@ -118,7 +118,7 @@ static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id,
 
 static void *construct(osm_opensm_t *osm)
 {
-	const char *output_file = EVENTLOG_PLUGIN_DEFAULT_OUTPUT_FILE;
+	const char *output_file = EVENT_EXPORT_PLUGIN_DEFAULT_OUTPUT_FILE;
 	_json_event_logger_t *logger = malloc(sizeof(*logger));
 	if (!logger)
 		return NULL;
@@ -130,14 +130,14 @@ static void *construct(osm_opensm_t *osm)
 	logger->log_file = fopen(output_file, "a");
 	if (!logger->log_file) {
 		OSM_LOG(&osm->log, OSM_LOG_ERROR,
-			"Event Log Plugin: Failed to open output file \"%s\"\n",
+			"Event Export Plugin: Failed to open output file \"%s\"\n",
 			output_file);
 		free(logger);
 		return NULL;
 	}
 
 	OSM_LOG(&osm->log, OSM_LOG_INFO,
-		"Event Log Plugin: Logging events to \"%s\"\n", output_file);
+		"Event Export Plugin: Exporting events to \"%s\"\n", output_file);
 
 	return logger;
 }

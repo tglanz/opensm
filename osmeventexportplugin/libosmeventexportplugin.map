@@ -1,4 +1,4 @@
-OSMEVENTLOGPLUGIN_1.0 {
+OSMEVENTEXPORTPLUGIN_1.0 {
 	global:
 		osm_event_plugin;
 	local:
