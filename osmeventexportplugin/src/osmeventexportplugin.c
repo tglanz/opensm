@@ -53,39 +53,33 @@ static const char *event_id_to_string(osm_epi_event_id_t event_id)
 
 static void log_port_errors_payload(FILE *log_file, const osm_epi_pe_event_t *pe_event)
 {
-	fprintf(log_file, ",\"payload\":{");
-	fprintf(log_file, "\"port_id\":{");
-	fprintf(log_file, "\"node_guid\":\"0x%016" PRIx64 "\",", cl_ntoh64(pe_event->port_id.node_guid));
-	fprintf(log_file, "\"port_num\":%u,", pe_event->port_id.port_num);
-	fprintf(log_file, "\"node_name\":\"%s\"", pe_event->port_id.node_name);
-	fprintf(log_file, "},");
-	fprintf(log_file, "\"symbol_err_cnt\":%" PRIu64 ",", pe_event->symbol_err_cnt);
-	fprintf(log_file, "\"link_err_recover\":%" PRIu64 ",", pe_event->link_err_recover);
-	fprintf(log_file, "\"link_downed\":%" PRIu64 ",", pe_event->link_downed);
-	fprintf(log_file, "\"rcv_err\":%" PRIu64 ",", pe_event->rcv_err);
-	fprintf(log_file, "\"rcv_rem_phys_err\":%" PRIu64 ",", pe_event->rcv_rem_phys_err);
-	fprintf(log_file, "\"rcv_switch_relay_err\":%" PRIu64 ",", pe_event->rcv_switch_relay_err);
-	fprintf(log_file, "\"xmit_discards\":%" PRIu64 ",", pe_event->xmit_discards);
-	fprintf(log_file, "\"xmit_constraint_err\":%" PRIu64 ",", pe_event->xmit_constraint_err);
-	fprintf(log_file, "\"rcv_constraint_err\":%" PRIu64 ",", pe_event->rcv_constraint_err);
-	fprintf(log_file, "\"link_integrity\":%" PRIu64 ",", pe_event->link_integrity);
-	fprintf(log_file, "\"buffer_overrun\":%" PRIu64 ",", pe_event->buffer_overrun);
-	fprintf(log_file, "\"vl15_dropped\":%" PRIu64 ",", pe_event->vl15_dropped);
-	fprintf(log_file, "\"xmit_wait\":%" PRIu64, pe_event->xmit_wait);
-	fprintf(log_file, "}");
+	fprintf(log_file, ",\"payload_node_guid\":\"0x%016" PRIx64 "\",", cl_ntoh64(pe_event->port_id.node_guid));
+	fprintf(log_file, "\"payload_port_num\":%u,", pe_event->port_id.port_num);
+	fprintf(log_file, "\"payload_node_name\":\"%s\",", pe_event->port_id.node_name);
+	fprintf(log_file, "\"payload_symbol_err_cnt\":%" PRIu64 ",", pe_event->symbol_err_cnt);
+	fprintf(log_file, "\"payload_link_err_recover\":%" PRIu64 ",", pe_event->link_err_recover);
+	fprintf(log_file, "\"payload_link_downed\":%" PRIu64 ",", pe_event->link_downed);
+	fprintf(log_file, "\"payload_rcv_err\":%" PRIu64 ",", pe_event->rcv_err);
+	fprintf(log_file, "\"payload_rcv_rem_phys_err\":%" PRIu64 ",", pe_event->rcv_rem_phys_err);
+	fprintf(log_file, "\"payload_rcv_switch_relay_err\":%" PRIu64 ",", pe_event->rcv_switch_relay_err);
+	fprintf(log_file, "\"payload_xmit_discards\":%" PRIu64 ",", pe_event->xmit_discards);
+	fprintf(log_file, "\"payload_xmit_constraint_err\":%" PRIu64 ",", pe_event->xmit_constraint_err);
+	fprintf(log_file, "\"payload_rcv_constraint_err\":%" PRIu64 ",", pe_event->rcv_constraint_err);
+	fprintf(log_file, "\"payload_link_integrity\":%" PRIu64 ",", pe_event->link_integrity);
+	fprintf(log_file, "\"payload_buffer_overrun\":%" PRIu64 ",", pe_event->buffer_overrun);
+	fprintf(log_file, "\"payload_vl15_dropped\":%" PRIu64 ",", pe_event->vl15_dropped);
+	fprintf(log_file, "\"payload_xmit_wait\":%" PRIu64, pe_event->xmit_wait);
 }
 
 static void log_trap_payload(FILE *log_file, const ib_mad_notice_attr_t *notice)
 {
-	fprintf(log_file, ",\"payload\":{");
-	fprintf(log_file, "\"type\":\"%s\",", ib_notice_is_generic(notice) ? "generic" : "vendor");
+	fprintf(log_file, ",\"payload_type\":\"%s\",", ib_notice_is_generic(notice) ? "generic" : "vendor");
 
 	if (ib_notice_is_generic(notice)) {
-		fprintf(log_file, "\"trap_name\":\"%s\",", ib_get_trap_str(notice->g_or_v.generic.trap_num));
+		fprintf(log_file, "\"payload_trap_name\":\"%s\",", ib_get_trap_str(notice->g_or_v.generic.trap_num));
 	}
 
-	fprintf(log_file, "\"issuer_lid\":%u", cl_ntoh16(notice->issuer_lid));
-	fprintf(log_file, "}");
+	fprintf(log_file, "\"payload_issuer_lid\":%u", cl_ntoh16(notice->issuer_lid));
 }
 
 static void log_event(_json_event_logger_t *logger, osm_epi_event_id_t event_id, void *event_data)
